@@ -21,7 +21,7 @@ A blockchain-based finance tracking system built with Ethereum, Node.js, and Mon
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/finance-tracker.git
+git clone https://github.com/AvijitDas229/finance-tracker.git
 cd finance-tracker
 
 # Install dependencies
