@@ -1,5 +1,5 @@
 const Web3 = require('web3');
-const { setContract } = require('./server.js');
+const { setContract } = require('./server.js.old');
 
 // Connect to Ganache
 const web3 = new Web3('http://localhost:8545');
