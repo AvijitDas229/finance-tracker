@@ -1,22 +1,37 @@
 {
   "name": "finance-tracker",
   "version": "1.0.0",
-  "description": "Blockchain-based Finance Tracking System",
-  "main": "server.js",
+  "description": "Blockchain-based Organization Finance Tracking System with Latest Dependencies",
+  "main": "server-final.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
-    "deploy": "node deploy-fixed.js",
+    "start": "node server-final.js",
+    "dev": "nodemon server-final.js",
+    "clean-install": "rm -rf node_modules package-lock.json && npm install",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [
+    "blockchain",
+    "ethereum",
+    "finance",
+    "web3",
+    "mongodb",
+    "express"
+  ],
+  "author": "Avijit Das",
+  "license": "MIT",
   "dependencies": {
-    "crypto-js": "^4.1.1",
-    "ethereumjs-tx": "^2.1.2",
-    "express": "^4.18.2",
-    "mongoose": "^6.13.8",
-    "web3": "^1.10.0"
+    "express": "^4.21.1",
+    "mongoose": "^8.7.2",
+    "web3": "^4.7.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.1"
   },
   "devDependencies": {
-    "nodemon": "^2.0.22"
+    "nodemon": "^3.1.7"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

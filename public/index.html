@@ -3,128 +3,474 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finance Tracker</title>
+    <title>Finance Tracker - Blockchain Wallet</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        .transaction { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; }
-        .income { border-left: 4px solid #28a745; }
-        .expense { border-left: 4px solid #dc3545; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        
+        .auth-container { 
+            background: white; 
+            padding: 40px; 
+            border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 400px;
+            margin: 100px auto;
+        }
+        
+        .app-container { display: none; }
+        
+        .header { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 10px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        
+        .card { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .wallet-card { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            grid-column: 1 / -1;
+        }
+        
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        input, select, button { width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 16px; }
+        input:focus, select:focus { border-color: #667eea; outline: none; }
+        
+        button { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        button:hover { transform: translateY(-2px); }
+        button.secondary { background: #6c757d; }
+        button.danger { background: #dc3545; }
+        
+        .transaction { 
+            border-left: 4px solid; 
+            padding: 15px; 
+            margin: 10px 0; 
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .income { border-color: #28a745; }
+        .expense { border-color: #dc3545; }
+        
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
+        .stat-card { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 10px; 
+            text-align: center; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .positive { color: #28a745; font-size: 24px; font-weight: bold; }
+        .negative { color: #dc3545; font-size: 24px; font-weight: bold; }
+        
+        .wallet-address { 
+            background: rgba(255,255,255,0.2); 
+            padding: 10px; 
+            border-radius: 6px; 
+            font-family: monospace;
+            margin: 10px 0;
+            word-break: break-all;
+        }
+        
+        .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #e1e5e9; }
+        .tab { padding: 12px 20px; cursor: pointer; border-bottom: 3px solid transparent; }
+        .tab.active { border-bottom-color: #667eea; color: #667eea; font-weight: 600; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .message { padding: 12px; border-radius: 6px; margin: 10px 0; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        
+        .logout-btn { 
+            background: #dc3545; 
+            padding: 8px 16px; 
+            width: auto; 
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
+    <!-- Authentication Container -->
     <div class="container">
-        <h1>Organization Finance Tracker</h1>
-        
-        <div class="form-section">
-            <h2>Add Transaction</h2>
-            <form id="transactionForm">
-                <div class="form-group">
-                    <label>Description:</label>
-                    <input type="text" id="description" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Amount:</label>
-                    <input type="number" id="amount" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Type:</label>
-                    <select id="type" required>
-                        <option value="income">Income</option>
-                        <option value="expense">Expense</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label>Your Address:</label>
-                    <input type="text" id="senderAddress" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Private Key:</label>
-                    <input type="password" id="privateKey" required>
-                </div>
-                
-                <button type="submit">Add Transaction</button>
-            </form>
+        <div class="auth-container" id="authContainer">
+            <h2 style="text-align: center; margin-bottom: 30px; color: #333;">🔐 Finance Tracker</h2>
+            
+            <div class="tabs">
+                <div class="tab active" onclick="showTab('login')">Login</div>
+                <div class="tab" onclick="showTab('register')">Register</div>
+            </div>
+            
+            <!-- Login Form -->
+            <div id="loginTab" class="tab-content active">
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label>Email:</label>
+                        <input type="email" id="loginEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password:</label>
+                        <input type="password" id="loginPassword" required>
+                    </div>
+                    <button type="submit">Login</button>
+                </form>
+            </div>
+            
+            <!-- Register Form -->
+            <div id="registerTab" class="tab-content">
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label>Username:</label>
+                        <input type="text" id="registerUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email:</label>
+                        <input type="email" id="registerEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password:</label>
+                        <input type="password" id="registerPassword" required>
+                    </div>
+                    <button type="submit">Register & Get Wallet</button>
+                </form>
+                <p style="margin-top: 15px; font-size: 14px; color: #666;">
+                    💡 You'll automatically receive a wallet with 100 ETH when you register!
+                </p>
+            </div>
+            
+            <div id="authMessage"></div>
         </div>
-        
-        <div class="transactions-section">
-            <h2>Transactions</h2>
-            <button onclick="loadTransactions()">Refresh Transactions</button>
-            <div id="transactionsList"></div>
+    </div>
+
+    <!-- Main Application Container -->
+    <div class="container">
+        <div class="app-container" id="appContainer">
+            <!-- Header -->
+            <div class="header">
+                <div>
+                    <h1>🏦 Finance Tracker</h1>
+                    <p>Blockchain-powered personal finance management</p>
+                </div>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+
+            <!-- Wallet Overview -->
+            <div class="card wallet-card">
+                <h2>💰 Your Wallet</h2>
+                <div class="wallet-address" id="walletAddress">Loading...</div>
+                <div class="stats">
+                    <div class="stat-card">
+                        <h3>Total Balance</h3>
+                        <p class="positive" id="totalBalance">Loading...</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Income</h3>
+                        <p class="positive" id="totalIncome">Loading...</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Expenses</h3>
+                        <p class="negative" id="totalExpenses">Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid">
+                <!-- Send Money -->
+                <div class="card">
+                    <h2>💸 Send Money</h2>
+                    <form id="sendMoneyForm">
+                        <div class="form-group">
+                            <label>Receiver Wallet Address:</label>
+                            <input type="text" id="receiverAddress" placeholder="0x..." required>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount (ETH):</label>
+                            <input type="number" id="sendAmount" step="0.001" min="0.001" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Description:</label>
+                            <input type="text" id="sendDescription" placeholder="Payment for..." required>
+                        </div>
+                        <button type="submit">Send Payment</button>
+                    </form>
+                    <div id="sendMessage"></div>
+                </div>
+
+                <!-- Receive Money -->
+                <div class="card">
+                    <h2>📥 Receive Money</h2>
+                    <div class="form-group">
+                        <label>Your Wallet Address:</label>
+                        <div class="wallet-address" id="receiveWalletAddress"></div>
+                    </div>
+                    <p style="color: #666; font-size: 14px;">
+                        Share this address with others to receive payments. 
+                        When someone sends you money, it will appear as income.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Transactions -->
+            <div class="card">
+                <h2>📋 Transaction History</h2>
+                <button onclick="loadTransactions()" style="width: auto; margin-bottom: 15px;">Refresh</button>
+                <div id="transactionsList"></div>
+            </div>
         </div>
     </div>
 
     <script>
-        document.getElementById('transactionForm').addEventListener('submit', async function(e) {
+        let currentUser = null;
+        let currentToken = localStorage.getItem('financeToken');
+
+        // Tab management
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.querySelector(`.tab[onclick="showTab('${tabName}')"]`).classList.add('active');
+            document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+
+        // Authentication functions
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            await loginUser();
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            await registerUser();
+        });
+
+        async function loginUser() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentToken = data.token;
+                    currentUser = data.user;
+                    localStorage.setItem('financeToken', data.token);
+                    showApp();
+                } else {
+                    showMessage('authMessage', data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('authMessage', 'Login failed: ' + error.message, 'error');
+            }
+        }
+
+        async function registerUser() {
+            const username = document.getElementById('registerUsername').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('authMessage', 
+                        `✅ Registered successfully! Your wallet address: ${data.user.walletAddress}`, 
+                        'success'
+                    );
+                    // Auto-switch to login
+                    showTab('login');
+                    document.getElementById('loginEmail').value = email;
+                } else {
+                    showMessage('authMessage', data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('authMessage', 'Registration failed: ' + error.message, 'error');
+            }
+        }
+
+        function showApp() {
+            document.getElementById('authContainer').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+            loadDashboard();
+            loadTransactions();
+        }
+
+        function logout() {
+            currentToken = null;
+            currentUser = null;
+            localStorage.removeItem('financeToken');
+            document.getElementById('appContainer').style.display = 'none';
+            document.getElementById('authContainer').style.display = 'block';
+            document.getElementById('authMessage').innerHTML = '';
+        }
+
+        // Dashboard functions
+        async function loadDashboard() {
+            if (!currentToken) return;
+
+            try {
+                // Get user profile
+                const userResponse = await fetch('/api/auth/me', {
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
+                });
+                const userData = await userResponse.json();
+                
+                if (userData.success) {
+                    currentUser = userData.user;
+                    document.getElementById('walletAddress').textContent = currentUser.walletAddress;
+                    document.getElementById('receiveWalletAddress').textContent = currentUser.walletAddress;
+                }
+
+                // Get dashboard data
+                const dashboardResponse = await fetch('/api/dashboard/summary', {
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
+                });
+                const dashboardData = await dashboardResponse.json();
+                
+                if (dashboardData.success) {
+                    document.getElementById('totalBalance').textContent = dashboardData.summary.balance + ' ETH';
+                    document.getElementById('totalIncome').textContent = dashboardData.summary.totalIncome + ' ETH';
+                    document.getElementById('totalExpenses').textContent = dashboardData.summary.totalExpenses + ' ETH';
+                }
+            } catch (error) {
+                console.error('Dashboard loading failed:', error);
+            }
+        }
+
+        // Send money functionality
+        document.getElementById('sendMoneyForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const transactionData = {
-                description: document.getElementById('description').value,
-                amount: document.getElementById('amount').value,
-                type: document.getElementById('type').value,
-                senderAddress: document.getElementById('senderAddress').value,
-                privateKey: document.getElementById('privateKey').value
-            };
-            
+            const receiver = document.getElementById('receiverAddress').value;
+            const amount = parseFloat(document.getElementById('sendAmount').value);
+            const description = document.getElementById('sendDescription').value;
+
+            if (amount <= 0) {
+                showMessage('sendMessage', 'Amount must be positive', 'error');
+                return;
+            }
+
             try {
                 const response = await fetch('/api/transactions', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentToken
                     },
-                    body: JSON.stringify(transactionData)
+                    body: JSON.stringify({
+                        description: description,
+                        amount: amount,
+                        type: 'expense',
+                        category: 'transfer',
+                        receiver: receiver
+                    })
                 });
                 
-                const result = await response.json();
+                const data = await response.json();
                 
-                if (result.success) {
-                    alert('Transaction added successfully!');
-                    document.getElementById('transactionForm').reset();
+                if (data.success) {
+                    showMessage('sendMessage', '✅ Payment sent successfully!', 'success');
+                    document.getElementById('sendMoneyForm').reset();
+                    loadDashboard();
                     loadTransactions();
                 } else {
-                    alert('Error: ' + result.error);
+                    showMessage('sendMessage', '❌ ' + data.error, 'error');
                 }
             } catch (error) {
-                alert('Error: ' + error.message);
+                showMessage('sendMessage', '❌ Payment failed: ' + error.message, 'error');
             }
         });
-        
+
+        // Transactions list
         async function loadTransactions() {
+            if (!currentToken) return;
+
             try {
-                const response = await fetch('/api/transactions');
-                const transactions = await response.json();
-                
-                const transactionsList = document.getElementById('transactionsList');
-                transactionsList.innerHTML = '';
-                
-                transactions.forEach(tx => {
-                    const transactionDiv = document.createElement('div');
-                    transactionDiv.className = `transaction ${tx.type}`;
-                    transactionDiv.innerHTML = `
-                        <h3>${tx.description}</h3>
-                        <p>Amount: $${tx.amount} (${tx.type})</p>
-                        <p>Sender: ${tx.sender}</p>
-                        <p>Date: ${new Date(tx.timestamp).toLocaleString()}</p>
-                        <p>Blockchain Hash: ${tx.blockchainHash}</p>
-                    `;
-                    transactionsList.appendChild(transactionDiv);
+                const response = await fetch('/api/transactions', {
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
                 });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const transactionsHtml = data.transactions.map(t => `
+                        <div class="transaction ${t.type}">
+                            <h4>${t.description}</h4>
+                            <p><strong>Amount:</strong> ${t.amount} ETH | 
+                               <strong>Type:</strong> ${t.type} | 
+                               <strong>Category:</strong> ${t.category}</p>
+                            <p><strong>From:</strong> ${t.sender.substring(0, 10)}... → 
+                               <strong>To:</strong> ${t.receiver.substring(0, 10)}...</p>
+                            <small>Date: ${new Date(t.timestamp).toLocaleString()}</small>
+                        </div>
+                    `).join('');
+                    
+                    document.getElementById('transactionsList').innerHTML = transactionsHtml || '<p>No transactions yet</p>';
+                }
             } catch (error) {
-                console.error('Error loading transactions:', error);
+                document.getElementById('transactionsList').innerHTML = '<p>Failed to load transactions</p>';
             }
         }
-        
-        // Load transactions when page loads
-        loadTransactions();
+
+        // Helper function
+        function showMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="message ${type}">${message}</div>`;
+            setTimeout(() => element.innerHTML = '', 5000);
+        }
+
+        // Initialize
+        if (currentToken) {
+            // Verify token is still valid
+            fetch('/api/auth/me', {
+                headers: { 'Authorization': 'Bearer ' + currentToken }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentUser = data.user;
+                    showApp();
+                } else {
+                    localStorage.removeItem('financeToken');
+                }
+            })
+            .catch(() => {
+                localStorage.removeItem('financeToken');
+            });
+        }
     </script>
 </body>
 </html>
