@@ -111,21 +111,6 @@
             width: auto; 
             font-size: 14px;
         }
-
-        /* ADD THIS NEW CSS */
-        .refresh-btn {
-            background: rgba(255,255,255,0.2) !important;
-            border: 1px solid rgba(255,255,255,0.3) !important;
-            color: white !important;
-            width: auto !important;
-            padding: 8px 16px !important;
-            margin-left: 10px;
-        }
-
-        .refresh-btn:hover {
-            background: rgba(255,255,255,0.3) !important;
-            transform: translateY(-1px);
-        }
     </style>
 </head>
 <body>
@@ -196,7 +181,7 @@
             <div class="card wallet-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2>💰 Your Wallet</h2>
-                    <button onclick="loadDashboard()" class="refresh-btn">
+                    <button onclick="loadDashboard()" style="width: auto; padding: 8px 16px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);">
                         🔄 Refresh
                     </button>
                 </div>
@@ -215,13 +200,9 @@
                         <p class="negative" id="totalExpenses">Loading...</p>
                     </div>
                 </div>
-                <!-- AUTO-REFRESH STATUS -->
-                <div style="text-align: center; margin-top: 15px; opacity: 0.7; font-size: 12px;">
-                    <span id="lastUpdate">Auto-refreshing every 5 seconds</span>
-                </div>
             </div>
-
             <div class="grid">
+                
                 <!-- Send Money -->
                 <div class="card">
                     <h2>💸 Send Money</h2>
@@ -229,15 +210,6 @@
                         <div class="form-group">
                             <label>Receiver Wallet Address:</label>
                             <input type="text" id="receiverAddress" placeholder="0x..." required>
-                        </div>
-                        <div class="form-group">
-                            <label>Available Wallets:</label>
-                            <select id="availableWallets" onchange="selectWallet(this.value)">
-                                <option value="">Select a wallet...</option>
-                            </select>
-                            <button type="button" onclick="loadAvailableWallets()" style="width: auto; margin-top: 5px;">
-                                Refresh Wallets
-                            </button>
                         </div>
                         <div class="form-group">
                             <label>Amount (ETH):</label>
@@ -251,6 +223,17 @@
                     </form>
                     <div id="sendMessage"></div>
                 </div>
+            <!-- Add this after the Send Money form -->
+            <div class="form-group">
+                <label>Available Wallets:</label>
+                <select id="availableWallets" onchange="selectWallet(this.value)">
+                    <option value="">Select a wallet...</option>
+                </select>
+                <button type="button" onclick="loadAvailableWallets()" style="width: auto; margin-top: 5px;">
+                    Refresh Wallets
+                </button>
+            </div>
+
 
                 <!-- Receive Money -->
                 <div class="card">
@@ -278,7 +261,6 @@
     <script>
         let currentUser = null;
         let currentToken = localStorage.getItem('financeToken');
-        let dashboardRefreshInterval;
 
         // Tab management
         function showTab(tabName) {
@@ -287,6 +269,50 @@
             
             document.querySelector(`.tab[onclick="showTab('${tabName}')"]`).classList.add('active');
             document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+        
+        // Load available wallets
+        async function loadAvailableWallets() {
+            if (!currentToken) return;
+            
+            try {
+                const response = await fetch('/api/wallets', {
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const select = document.getElementById('availableWallets');
+                    select.innerHTML = '<option value="">Select a wallet...</option>';
+                    
+                    data.wallets.forEach(wallet => {
+                        if (wallet.walletAddress !== currentUser.walletAddress) {
+                            const option = document.createElement('option');
+                            option.value = wallet.walletAddress;
+                            option.textContent = `${wallet.username} - ${wallet.walletAddress.substring(0, 10)}...`;
+                            select.appendChild(option);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load wallets:', error);
+            }
+        }
+
+        function selectWallet(walletAddress) {
+            if (walletAddress) {
+                document.getElementById('receiverAddress').value = walletAddress;
+            }
+        }
+
+        // Call this when app loads
+        function showApp() {
+            document.getElementById('authContainer').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+            loadDashboard();
+            loadTransactions();
+            loadAvailableWallets();
+            startDashboardAutoRefresh(); // ✅ START AUTO-REFRESH WHEN USER LOGS IN
         }
 
         // Authentication functions
@@ -362,11 +388,11 @@
             loadDashboard();
             loadTransactions();
             loadAvailableWallets();
-            startDashboardAutoRefresh();
+            startDashboardAutoRefresh(); // ✅ START AUTO-REFRESH WHEN USER LOGS IN
         }
 
         function logout() {
-            stopDashboardAutoRefresh();
+            stopDashboardAutoRefresh(); // ✅ STOP AUTO-REFRESH WHEN USER LOGS OUT
             currentToken = null;
             currentUser = null;
             localStorage.removeItem('financeToken');
@@ -402,45 +428,13 @@
                     document.getElementById('totalBalance').textContent = dashboardData.summary.balance + ' ETH';
                     document.getElementById('totalIncome').textContent = dashboardData.summary.totalIncome + ' ETH';
                     document.getElementById('totalExpenses').textContent = dashboardData.summary.totalExpenses + ' ETH';
-                    
-                    // Update last refresh time
-                    const now = new Date();
-                    document.getElementById('lastUpdate').textContent = 
-                        `Last updated: ${now.toLocaleTimeString()} (auto-refresh every 5s)`;
                 }
             } catch (error) {
                 console.error('Dashboard loading failed:', error);
-                document.getElementById('lastUpdate').textContent = 'Update failed - click Refresh';
             }
         }
 
-        // Auto-refresh dashboard every 5 seconds
-        function startDashboardAutoRefresh() {
-            // Clear any existing interval
-            if (dashboardRefreshInterval) {
-                clearInterval(dashboardRefreshInterval);
-            }
-            
-            // Set new interval - refresh every 5 seconds
-            dashboardRefreshInterval = setInterval(() => {
-                if (currentToken) {
-                    loadDashboard();
-                }
-            }, 5000);
-            
-            console.log('🔄 Dashboard auto-refresh started');
-        }
-
-        // Stop auto-refresh
-        function stopDashboardAutoRefresh() {
-            if (dashboardRefreshInterval) {
-                clearInterval(dashboardRefreshInterval);
-                dashboardRefreshInterval = null;
-                console.log('⏹️ Dashboard auto-refresh stopped');
-            }
-        }
-
-        // Send money functionality - WITH IMMEDIATE REFRESH
+        // Send money functionality
         document.getElementById('sendMoneyForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -474,16 +468,8 @@
                 if (data.success) {
                     showMessage('sendMessage', '✅ Payment sent successfully!', 'success');
                     document.getElementById('sendMoneyForm').reset();
-                    
-                    // IMMEDIATELY REFRESH DASHBOARD AND TRANSACTIONS
                     loadDashboard();
                     loadTransactions();
-                    
-                    // Show notification that auto-refresh is active
-                    setTimeout(() => {
-                        showMessage('sendMessage', '💡 Dashboard auto-refreshes every 5 seconds', 'success');
-                    }, 2000);
-                    
                 } else {
                     showMessage('sendMessage', '❌ ' + data.error, 'error');
                 }
@@ -491,41 +477,7 @@
                 showMessage('sendMessage', '❌ Payment failed: ' + error.message, 'error');
             }
         });
-
-        // Load available wallets
-        async function loadAvailableWallets() {
-            if (!currentToken) return;
-            
-            try {
-                const response = await fetch('/api/wallets', {
-                    headers: { 'Authorization': 'Bearer ' + currentToken }
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    const select = document.getElementById('availableWallets');
-                    select.innerHTML = '<option value="">Select a wallet...</option>';
-                    
-                    data.wallets.forEach(wallet => {
-                        if (wallet.walletAddress !== currentUser.walletAddress) {
-                            const option = document.createElement('option');
-                            option.value = wallet.walletAddress;
-                            option.textContent = `${wallet.username} - ${wallet.walletAddress.substring(0, 10)}...`;
-                            select.appendChild(option);
-                        }
-                    });
-                }
-            } catch (error) {
-                console.error('Failed to load wallets:', error);
-            }
-        }
-
-        function selectWallet(walletAddress) {
-            if (walletAddress) {
-                document.getElementById('receiverAddress').value = walletAddress;
-            }
-        }
-
+        
         // Transactions list
         async function loadTransactions() {
             if (!currentToken) return;

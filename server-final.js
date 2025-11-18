@@ -74,7 +74,7 @@ const TransactionSchema = new mongoose.Schema({
     type: { type: String, enum: ['income', 'expense'] },
     category: { 
         type: String, 
-        enum: ['salary', 'rent', 'equipment', 'utilities', 'marketing', 'other'], 
+        enum: ['salary', 'rent', 'equipment', 'utilities', 'marketing', 'transfer', 'other'], 
         default: 'other' 
     },
     sender: String,
@@ -92,7 +92,7 @@ const Transaction = mongoose.model('Transaction', TransactionSchema);
 // Available wallet addresses from Ganache
 const AVAILABLE_WALLETS = [
     "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1",
-    "0xFFcf8FDEE72ac11b5c542428B35EEF5769C409f0",
+    "0xFFcf8FDEE72ac11b5c542428B35EEF5769C409f0", 
     "0x22d491Bde2303f2f43325b2108D26f1eAbA1e32b",
     "0xE11BA2b4D45Eaed5996Cd0823791E0C93114882d",
     "0xd03ea8624C8C5987235048901fB614fDcA89b117",
@@ -103,8 +103,26 @@ const AVAILABLE_WALLETS = [
     "0x1dF62f291b2E969fB0849d99D9Ce41e2F137006e"
 ];
 
-// Track assigned wallets
+// Track assigned wallets - initialize with already used wallets
 let assignedWallets = new Set();
+
+// Initialize with already registered users
+async function initializeAssignedWallets() {
+    try {
+        const users = await User.find({});
+        users.forEach(user => {
+            if (user.walletAddress) {
+                assignedWallets.add(user.walletAddress);
+            }
+        });
+        console.log(`✅ Initialized with ${assignedWallets.size} already assigned wallets`);
+    } catch (error) {
+        console.log('⚠️ Could not initialize assigned wallets');
+    }
+}
+
+// Call this when server starts
+initializeAssignedWallets();
 
 // Helper to get available wallet
 function getAvailableWallet() {
@@ -116,7 +134,6 @@ function getAvailableWallet() {
     }
     throw new Error('No more wallets available');
 }
-
 
 // ==================== AUTHENTICATION MIDDLEWARE ====================
 
@@ -211,7 +228,7 @@ app.get('/api/status', async (req, res) => {
     }
 });
 
-// User Registration - Auto-assign wallet
+// User Registration - Auto-assign wallet with initial balance
 app.post('/api/auth/register', async (req, res) => {
     try {
         const { username, email, password } = req.body;
@@ -260,6 +277,21 @@ app.post('/api/auth/register', async (req, res) => {
 
         await user.save();
 
+        // ✅ CREATE INITIAL 100 ETH BALANCE TRANSACTION
+        const initialTransaction = new Transaction({
+            transactionId: Date.now(),
+            description: "Initial Wallet Balance",
+            amount: 100,
+            type: "income",
+            category: "other",
+            sender: "system",
+            receiver: walletAddress,
+            blockchainHash: "0x" + Math.random().toString(16).substr(2, 64),
+            createdBy: user._id
+        });
+
+        await initialTransaction.save();
+
         // Generate JWT token
         const token = jwt.sign(
             { 
@@ -274,7 +306,7 @@ app.post('/api/auth/register', async (req, res) => {
 
         res.status(201).json({
             success: true,
-            message: 'User registered successfully',
+            message: 'User registered successfully with 100 ETH initial balance!',
             token,
             user: {
                 id: user._id,
@@ -397,7 +429,7 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
     }
 });
 
-// Add Transaction
+// Add Transaction - CREATE TRANSACTIONS FOR BOTH SENDER AND RECEIVER
 app.post('/api/transactions', authenticateToken, async (req, res) => {
     try {
         const { description, amount, type, category, receiver } = req.body;
@@ -410,6 +442,13 @@ app.post('/api/transactions', authenticateToken, async (req, res) => {
             });
         }
 
+        if (amount <= 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Amount must be positive'
+            });
+        }
+
         // Check database connection
         if (mongoose.connection.readyState !== 1) {
             return res.status(503).json({
@@ -418,51 +457,71 @@ app.post('/api/transactions', authenticateToken, async (req, res) => {
             });
         }
 
-        // Get user's wallet address
-        const user = await User.findById(req.user.userId);
-        if (!user) {
+        // Get sender's info
+        const senderUser = await User.findById(req.user.userId);
+        if (!senderUser) {
             return res.status(404).json({ 
                 success: false,
-                error: 'User not found' 
+                error: 'Sender user not found' 
             });
         }
 
-        // Generate unique transaction ID
+        // Find receiver user by wallet address
+        const receiverUser = await User.findOne({ walletAddress: receiver });
+        if (!receiverUser) {
+            return res.status(400).json({
+                success: false,
+                error: 'Receiver wallet address not found in our system'
+            });
+        }
+
+        // Generate unique transaction IDs
         const lastTransaction = await Transaction.findOne().sort({ transactionId: -1 });
-        const transactionId = lastTransaction ? lastTransaction.transactionId + 1 : 1;
+        const baseTransactionId = lastTransaction ? lastTransaction.transactionId + 1 : 1;
 
-        // For income: receiver should be the user's wallet
-        // For expense: sender should be the user's wallet
-        const sender = type === 'income' ? (receiver || 'external_sender') : user.walletAddress;
-        const transactionReceiver = type === 'income' ? user.walletAddress : (receiver || 'external_receiver');
-
-        const transaction = new Transaction({
-            transactionId,
-            description,
+        // ✅ CREATE SENDER'S EXPENSE TRANSACTION
+        const senderTransaction = new Transaction({
+            transactionId: baseTransactionId,
+            description: description,
             amount: parseFloat(amount),
-            type,
-            category: category || 'other',
-            sender,
-            receiver: transactionReceiver,
+            type: 'expense',
+            category: category || 'transfer',
+            sender: senderUser.walletAddress,
+            receiver: receiverUser.walletAddress,
             blockchainHash: '0x' + Math.random().toString(16).substr(2, 64),
-            createdBy: req.user.userId
+            createdBy: senderUser._id
         });
 
-        await transaction.save();
+        // ✅ CREATE RECEIVER'S INCOME TRANSACTION
+        const receiverTransaction = new Transaction({
+            transactionId: baseTransactionId + 1,
+            description: `Received from ${senderUser.username}`,
+            amount: parseFloat(amount),
+            type: 'income',
+            category: 'transfer',
+            sender: senderUser.walletAddress,
+            receiver: receiverUser.walletAddress,
+            blockchainHash: '0x' + Math.random().toString(16).substr(2, 64),
+            createdBy: receiverUser._id
+        });
+
+        // Save both transactions
+        await senderTransaction.save();
+        await receiverTransaction.save();
 
         res.status(201).json({ 
             success: true, 
-            message: 'Transaction added successfully',
+            message: 'Transaction completed successfully!',
             transaction: {
-                id: transaction._id,
-                transactionId: transaction.transactionId,
-                description: transaction.description,
-                amount: transaction.amount,
-                type: transaction.type,
-                category: transaction.category,
-                sender: transaction.sender,
-                receiver: transaction.receiver,
-                timestamp: transaction.timestamp
+                id: senderTransaction._id,
+                transactionId: senderTransaction.transactionId,
+                description: senderTransaction.description,
+                amount: senderTransaction.amount,
+                type: senderTransaction.type,
+                category: senderTransaction.category,
+                sender: senderTransaction.sender,
+                receiver: senderTransaction.receiver,
+                timestamp: senderTransaction.timestamp
             }
         });
         
@@ -562,6 +621,90 @@ app.get('/api/dashboard/summary', authenticateToken, async (req, res) => {
     }
 });
 
+// Dashboard functions with auto-refresh
+let dashboardRefreshInterval;
+
+async function loadDashboard() {
+    if (!currentToken) return;
+
+    try {
+        // Get user profile
+        const userResponse = await fetch('/api/auth/me', {
+            headers: { 'Authorization': 'Bearer ' + currentToken }
+        });
+        const userData = await userResponse.json();
+        
+        if (userData.success) {
+            currentUser = userData.user;
+            document.getElementById('walletAddress').textContent = currentUser.walletAddress;
+            document.getElementById('receiveWalletAddress').textContent = currentUser.walletAddress;
+        }
+
+        // Get dashboard data
+        const dashboardResponse = await fetch('/api/dashboard/summary', {
+            headers: { 'Authorization': 'Bearer ' + currentToken }
+        });
+        const dashboardData = await dashboardResponse.json();
+        
+        if (dashboardData.success) {
+            document.getElementById('totalBalance').textContent = dashboardData.summary.balance + ' ETH';
+            document.getElementById('totalIncome').textContent = dashboardData.summary.totalIncome + ' ETH';
+            document.getElementById('totalExpenses').textContent = dashboardData.summary.totalExpenses + ' ETH';
+            
+            // Show last update time
+            console.log('✅ Dashboard updated at:', new Date().toLocaleTimeString());
+        }
+    } catch (error) {
+        console.error('Dashboard loading failed:', error);
+    }
+}
+
+// Auto-refresh dashboard every 5 seconds
+function startDashboardAutoRefresh() {
+    // Clear any existing interval
+    if (dashboardRefreshInterval) {
+        clearInterval(dashboardRefreshInterval);
+    }
+    
+    // Set new interval - refresh every 5 seconds
+    dashboardRefreshInterval = setInterval(() => {
+        if (currentToken) {
+            loadDashboard();
+        }
+    }, 5000); // 5000ms = 5 seconds
+    
+    console.log('🔄 Dashboard auto-refresh started');
+}
+
+// Stop auto-refresh
+function stopDashboardAutoRefresh() {
+    if (dashboardRefreshInterval) {
+        clearInterval(dashboardRefreshInterval);
+        dashboardRefreshInterval = null;
+        console.log('⏹️ Dashboard auto-refresh stopped');
+    }
+}
+
+// Get all registered wallets (for demo purposes)
+app.get('/api/wallets', authenticateToken, async (req, res) => {
+    try {
+        const users = await User.find({}).select('username walletAddress');
+        const wallets = users.map(user => ({
+            username: user.username,
+            walletAddress: user.walletAddress
+        }));
+        
+        res.json({
+            success: true,
+            wallets: wallets
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
 // ==================== ROOT ENDPOINT ====================
 
 app.get('/', (req, res) => {
