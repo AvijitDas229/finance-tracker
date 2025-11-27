@@ -78,7 +78,7 @@ Please note that this project is released with a Contributor Code of Conduct. By
 
 ## Support
 
-*   📧 **Email:** [your-email@example.com]
+*   📧 **Email:** avijit09082000@gmail.com
 *   🐛 **Bug Reports:** [GitHub Issues](https://github.com/AvijitDas229/finance-tracker/issues)
 *   💬 **Discussions:** [GitHub Discussions](https://github.com/AvijitDas229/finance-tracker/discussions)
 
