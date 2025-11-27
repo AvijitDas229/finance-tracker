@@ -2,8 +2,8 @@
 
 A modern, self-hosted personal and small-business finance tracking application. Built with a React.js frontend and a Spring Boot backend, it helps you take control of your income and expenses with a clean, intuitive interface.
 
-![Finance Tracker Logo](https://via.placeholder.com/800x400/3B82F6/FFFFFF?text=Finance+Tracker+Dashboard+Screenshot)
-*Add a screenshot of your actual dashboard here*
+<img width="1677" height="926" alt="Screenshot 2025-11-27 at 6 19 29 PM" src="https://github.com/user-attachments/assets/48539327-664d-43bb-93ad-388ebc0c8910" />
+
 
 ## Features
 
