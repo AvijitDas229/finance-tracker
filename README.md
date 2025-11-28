@@ -60,7 +60,7 @@ All detailed documentation is available inside the `/docs` folder.
 
 - 👉 **[Installation & Configuration Guide](docs/installation.md)**  
 - 👉 **[Developer Guide](docs/development.md)**  
-- 👉 **[Contributing Guidelines](CONTRIBUTING.md)**  
+- 👉 **[Contributing Guidelines](/docs/CONTRIBUTING.md)**  
 
 ---
 
