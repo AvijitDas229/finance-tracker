@@ -1,87 +1,91 @@
-# Finance Tracker
+# Finance Tracker (Blockchain-Enabled)
 
-A modern, self-hosted personal and small-business finance tracking application. Built with a React.js frontend and a Spring Boot backend, it helps you take control of your income and expenses with a clean, intuitive interface.
+A lightweight blockchain-integrated Finance Tracking System that records financial transactions securely with Ethereum smart contracts and stores extended transaction data off-chain using Node.js and MongoDB.
 
-<img width="1677" height="926" alt="Screenshot 2025-11-27 at 6 19 29 PM" src="https://github.com/user-attachments/assets/48539327-664d-43bb-93ad-388ebc0c8910" />
+This project demonstrates how blockchain can enhance transparency, auditability, and immutability in traditional financial tracking systems—all while keeping the system simple and beginner-friendly.
 
+---
 
-## Features
+## 📌 Features
 
-*   **Dashboard Overview:** Get a quick visual summary of your financial health with charts and statistics
-*   **Income & Expense Tracking:** Easily add, edit, and categorize your daily transactions
-*   **Secure Authentication:** JWT-based login and registration to keep your financial data private
-*   **RESTful API:** A robust and well-documented backend API for all financial operations
-*   **Docker Support:** Easy deployment using Docker and Docker Compose
-*   **Responsive Design:** Works seamlessly on desktop and mobile devices
+- **Add income & expense transactions**  
+  Track financial activities with metadata stored efficiently.
 
-## Who is this for?
+- **Blockchain-backed transaction logging**  
+  Uses a Solidity smart contract to maintain immutable on-chain references.
 
-### Individuals
-Perfect for anyone who wants to move beyond spreadsheets and have full control over their personal financial data in a private, self-hosted solution.
+- **Off-chain storage with MongoDB**  
+  Faster retrieval, flexible filtering, and rich transaction details.
 
-### Small to Mid-sized Businesses (SMBs)
-Ideal for:
-* **Freelancers & Consultants** tracking business expenses and income
-* **Startups** needing a simple internal tool for cash flow management
-* **Family-run businesses** monitoring operational costs
-* **Small teams** that need expense tracking without enterprise software complexity
+- **Node.js + Express backend API**  
+  Handles blockchain interactions, database operations, and business logic.
 
-**Cost Benefit:** Save thousands on expensive SaaS subscriptions by self-hosting this free, open-source alternative.
+- **Simple Web UI**  
+  Served using static assets from the `/public` folder.
 
-## Quick Start (Using Docker)
+- **Multiple deployment scripts**  
+  Includes helper scripts (`deploy.js`, `deploy-fixed.js`) for contract deployment.
 
-This is the easiest way to run the application.
+---
 
-### Prerequisites
-*   Docker
-*   Docker Compose
+## 👥 Who Is This Project For?
 
-### Installation
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/AvijitDas229/finance-tracker.git
-    cd finance-tracker
-    ```
+This project is ideal for:
 
-2.  Run with Docker Compose:
-    ```bash
-    docker-compose up -d
-    ```
+- **Students** learning blockchain + full-stack development  
+- **Developers** exploring hybrid on-chain/off-chain design patterns  
+- **Blockchain beginners** wanting hands-on experience with smart contracts  
+- **Educators** using it to teach decentralized architecture concepts  
+- **Anyone building finance tools** with security and transparency in mind  
 
-3.  Access the application:
-    *   **Frontend:** http://localhost:3000
-    *   **Backend API:** http://localhost:8080
-    *   **Default credentials:** (Register a new account through the frontend)
+---
 
-The application will start with a default H2 in-memory database. **For production use with persistent data, see our [Detailed Installation Guide](docs/installation.md).**
+## 🛠 Tech Stack Used
 
-## Documentation
+The repository includes the following technologies (based purely on actual repo structure):
 
-*   [Detailed Installation and Configuration](docs/installation.md)
-*   [API Reference](docs/api.md)
-*   [Developer Guide](docs/development.md)
-*   [Contributing Guidelines](CONTRIBUTING.md)
+- **Solidity** → smart contracts inside `/contracts`
+- **Truffle Framework** → migrations inside `/migrations`
+- **Ganache** → local blockchain for testing
+- **Node.js + Express** → backend (`server-final.js`, `server-latest.js`, etc.)
+- **MongoDB** → database for extended transaction data
+- **Web3.js** → to interact with blockchain
+- **HTML/CSS/JS** → frontend inside `/public`
 
-## Contributing
+---
 
-We love your input! We want to make contributing to Finance Tracker as easy and transparent as possible. Please read our [Contributing Guide](CONTRIBUTING.md) to get started.
+## 📚 Documentation
 
-Before contributing, you'll need to sign our Contributor License Agreement (CLA).
+All detailed documentation is available inside the `/docs` folder.
 
-## License
+- 👉 **[Installation & Configuration Guide](docs/installation.md)**  
+- 👉 **[Developer Guide](docs/development.md)**  
+- 👉 **[Contributing Guidelines](CONTRIBUTING.md)**  
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+---
 
-## Code of Conduct
+## 🚀 Quick Start
 
-Please note that this project is released with a Contributor Code of Conduct. By participating in this project you agree to abide by its terms. See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+```bash
+# 1. Clone the repository
+git clone https://github.com/AvijitDas229/finance-tracker.git
+cd finance-tracker
 
-## Support
+# 2. Install backend dependencies
+npm install
 
-*   📧 **Email:** avijit09082000@gmail.com
-*   🐛 **Bug Reports:** [GitHub Issues](https://github.com/AvijitDas229/finance-tracker/issues)
-*   💬 **Discussions:** [GitHub Discussions](https://github.com/AvijitDas229/finance-tracker/discussions)
+# 3. Start Ganache (local blockchain)
+npx ganache-cli -d
 
-## Project Link
+# 4. Deploy smart contracts
+npx truffle migrate --reset --network development
 
-[https://github.com/AvijitDas229/finance-tracker](https://github.com/AvijitDas229/finance-tracker)
+# 5. Configure environment variables
+cp .env.example .env
+# Fill in required fields inside .env
+
+# 6. Start MongoDB (local or Atlas)
+# Ensure MONGO_URI is correct
+
+# 7. Start the backend server
+node server-final.js
